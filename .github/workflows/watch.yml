@@ -13,79 +13,140 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  check-readme:
+  check-jobs:
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout watcher repository
         uses: actions/checkout@v4
 
-      - name: Get latest README commit
-        id: latest
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          RESPONSE=$(curl --fail --silent --show-error \
-            --header "Accept: application/vnd.github+json" \
-            --header "Authorization: Bearer $GH_TOKEN" \
-            --header "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/SimplifyJobs/Summer2027-Internships/commits?sha=dev&path=README.md&per_page=1")
-
-          SHA=$(echo "$RESPONSE" | jq -r '.[0].sha')
-          MESSAGE=$(echo "$RESPONSE" | jq -r '.[0].commit.message' | head -n 1)
-
-          if [ -z "$SHA" ] || [ "$SHA" = "null" ]; then
-            echo "Could not find the latest README commit."
-            exit 1
-          fi
-
-          echo "sha=$SHA" >> "$GITHUB_OUTPUT"
-          echo "message=$MESSAGE" >> "$GITHUB_OUTPUT"
-
-      - name: Compare with previous version
-        id: compare
-        env:
-          LATEST_SHA: ${{ steps.latest.outputs.sha }}
-        run: |
-          if [ ! -f state/last-sha.txt ]; then
-            echo "first_run=true" >> "$GITHUB_OUTPUT"
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-            exit 0
-          fi
-
-          PREVIOUS_SHA=$(cat state/last-sha.txt)
-
-          if [ "$LATEST_SHA" = "$PREVIOUS_SHA" ]; then
-            echo "changed=false" >> "$GITHUB_OUTPUT"
-          else
-            echo "changed=true" >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Send iPhone notification
-        if: steps.compare.outputs.changed == 'true'
-        env:
-          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
-          COMMIT_MESSAGE: ${{ steps.latest.outputs.message }}
+      - name: Download latest internship README
         run: |
           curl --fail --silent --show-error \
-            -H "Title: New Summer 2027 internships" \
+            "https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md" \
+            -o latest-readme.md
+
+      - name: Install parser
+        run: pip install beautifulsoup4
+
+      - name: Find added jobs
+        id: jobs
+        run: |
+          python <<'PY'
+          import os
+          from pathlib import Path
+          from bs4 import BeautifulSoup
+
+          def parse_jobs(path):
+              if not Path(path).exists():
+                  return {}
+
+              content = Path(path).read_text(encoding="utf-8")
+              soup = BeautifulSoup(content, "html.parser")
+              jobs = {}
+
+              for row in soup.find_all("tr"):
+                  cells = row.find_all("td")
+
+                  if len(cells) != 5:
+                      continue
+
+                  company = cells[0].get_text(" ", strip=True)
+                  role = cells[1].get_text(" ", strip=True)
+                  location = cells[2].get_text(", ", strip=True)
+
+                  links = cells[3].find_all("a", href=True)
+                  apply_url = links[0]["href"] if links else ""
+
+                  if not company or not role or not apply_url:
+                      continue
+
+                  # The application URL uniquely identifies the listing.
+                  key = apply_url
+
+                  jobs[key] = {
+                      "company": company,
+                      "role": role,
+                      "location": location,
+                      "url": apply_url,
+                  }
+
+              return jobs
+
+          old_jobs = parse_jobs("state/readme.md")
+          new_jobs = parse_jobs("latest-readme.md")
+
+          added = [
+              job
+              for key, job in new_jobs.items()
+              if key not in old_jobs
+          ]
+
+          removed = [
+              job
+              for key, job in old_jobs.items()
+              if key not in new_jobs
+          ]
+
+          output = Path(os.environ["GITHUB_OUTPUT"])
+
+          with output.open("a") as f:
+              f.write(f"first_run={'true' if not Path('state/readme.md').exists() else 'false'}\n")
+              f.write(f"added_count={len(added)}\n")
+              f.write(f"removed_count={len(removed)}\n")
+              f.write(f"changed={'true' if added or removed else 'false'}\n")
+
+          if added:
+              lines = []
+
+              for job in added[:10]:
+                  lines.append(
+                      f"{job['company']} — {job['role']}\n"
+                      f"{job['location']}\n"
+                      f"{job['url']}"
+                  )
+
+              if len(added) > 10:
+                  lines.append(f"And {len(added) - 10} more new jobs.")
+
+              Path("notification.txt").write_text(
+                  "\n\n".join(lines),
+                  encoding="utf-8"
+              )
+
+          print(f"Added jobs: {len(added)}")
+          print(f"Removed jobs: {len(removed)}")
+          PY
+
+      - name: Send notification
+        if: steps.jobs.outputs.added_count != '0' && steps.jobs.outputs.first_run != 'true'
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ADDED_COUNT: ${{ steps.jobs.outputs.added_count }}
+        run: |
+          curl --fail --silent --show-error \
+            -H "Title: $ADDED_COUNT new Summer 2027 job(s)" \
             -H "Priority: high" \
             -H "Tags: briefcase" \
             -H "Click: https://github.com/SimplifyJobs/Summer2027-Internships" \
-            -d "The internship README was updated: $COMMIT_MESSAGE" \
+            --data-binary @notification.txt \
             "https://ntfy.sh/$NTFY_TOPIC"
 
-      - name: Save latest README version
-        if: steps.compare.outputs.changed == 'true' || steps.compare.outputs.first_run == 'true'
-        env:
-          LATEST_SHA: ${{ steps.latest.outputs.sha }}
+      - name: Save latest README
+        if: steps.jobs.outputs.changed == 'true' || steps.jobs.outputs.first_run == 'true'
         run: |
           mkdir -p state
-          echo "$LATEST_SHA" > state/last-sha.txt
+          cp latest-readme.md state/readme.md
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add state/last-sha.txt
-          git commit -m "Update tracked README version"
+          git add state/readme.md
+
+          if git diff --cached --quiet; then
+            echo "No state changes."
+            exit 0
+          fi
+
+          git commit -m "Update tracked internship listings"
           git push
