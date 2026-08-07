@@ -1,0 +1,169 @@
+name: Watch Canadian Tech Internships 2026
+
+on:
+  schedule:
+    - cron: "*/10 * * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: internship-readme-watcher-canada
+  cancel-in-progress: false
+
+jobs:
+  check-jobs:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout watcher repository
+        uses: actions/checkout@v4
+
+      - name: Download latest internship README
+        run: |
+          curl --fail --silent --show-error \
+            "https://raw.githubusercontent.com/negarprh/Canadian-Tech-Internships-2026/main/README.md" \
+            -o latest-canada-readme.md
+
+      - name: Find added jobs
+        id: jobs
+        run: |
+          python <<'PY'
+          import os
+          import re
+          from pathlib import Path
+
+          URL_RE = re.compile(r"\]\((https?://[^)]+)\)")
+
+          def parse_jobs(path):
+              if not Path(path).exists():
+                  return {}
+
+              content = Path(path).read_text(encoding="utf-8")
+              jobs = {}
+              last_company = ""
+
+              for line in content.splitlines():
+                  stripped = line.strip()
+
+                  # Only markdown table body rows.
+                  if not stripped.startswith("|"):
+                      continue
+
+                  cells = [c.strip() for c in stripped.strip("|").split("|")]
+
+                  if len(cells) != 5:
+                      continue
+
+                  company, role, location, apply_cell, _date = cells
+
+                  # Skip the header and separator rows.
+                  if company.lower() == "company" or set(company) <= set("-: "):
+                      continue
+
+                  # Rows beginning with the continuation arrow reuse the
+                  # company from the row above.
+                  if company in ("↳", "") or company.strip("↳ ") == "":
+                      company = last_company
+                  else:
+                      last_company = company
+
+                  # Apply cells look like [![Apply](badge-img)](real-url);
+                  # the last URL is the actual application link.
+                  urls = URL_RE.findall(apply_cell)
+                  apply_url = urls[-1] if urls else ""
+
+                  if not company or not role:
+                      continue
+
+                  # Prefer the application URL as the unique key; fall back to
+                  # the company/role/location tuple for closed listings.
+                  key = apply_url or f"{company}|{role}|{location}"
+
+                  jobs[key] = {
+                      "company": company,
+                      "role": role,
+                      "location": location,
+                      "url": apply_url,
+                  }
+
+              return jobs
+
+          old_jobs = parse_jobs("state/canada-readme.md")
+          new_jobs = parse_jobs("latest-canada-readme.md")
+
+          added = [
+              job
+              for key, job in new_jobs.items()
+              if key not in old_jobs
+          ]
+
+          removed = [
+              job
+              for key, job in old_jobs.items()
+              if key not in new_jobs
+          ]
+
+          output = Path(os.environ["GITHUB_OUTPUT"])
+
+          with output.open("a") as f:
+              f.write(f"first_run={'true' if not Path('state/canada-readme.md').exists() else 'false'}\n")
+              f.write(f"added_count={len(added)}\n")
+              f.write(f"removed_count={len(removed)}\n")
+              f.write(f"changed={'true' if added or removed else 'false'}\n")
+
+          if added:
+              lines = []
+
+              for job in added[:10]:
+                  lines.append(
+                      f"{job['company']} — {job['role']}\n"
+                      f"{job['location']}\n"
+                      f"{job['url'] or 'See listing'}"
+                  )
+
+              if len(added) > 10:
+                  lines.append(f"And {len(added) - 10} more new jobs.")
+
+              Path("notification.txt").write_text(
+                  "\n\n".join(lines),
+                  encoding="utf-8"
+              )
+
+          print(f"Added jobs: {len(added)}")
+          print(f"Removed jobs: {len(removed)}")
+          PY
+
+      - name: Send notification
+        if: steps.jobs.outputs.added_count != '0' && steps.jobs.outputs.first_run != 'true'
+        env:
+          NTFY_TOPIC: ${{ secrets.NTFY_TOPIC }}
+          ADDED_COUNT: ${{ steps.jobs.outputs.added_count }}
+        run: |
+          curl --fail --silent --show-error \
+            -H "Title: $ADDED_COUNT new Canadian tech internship(s)" \
+            -H "Priority: high" \
+            -H "Tags: maple_leaf" \
+            -H "Click: https://github.com/negarprh/Canadian-Tech-Internships-2026" \
+            --data-binary @notification.txt \
+            "https://ntfy.sh/$NTFY_TOPIC"
+
+      - name: Save latest README
+        if: steps.jobs.outputs.changed == 'true' || steps.jobs.outputs.first_run == 'true'
+        run: |
+          mkdir -p state
+          cp latest-canada-readme.md state/canada-readme.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add state/canada-readme.md
+
+          if git diff --cached --quiet; then
+            echo "No state changes."
+            exit 0
+          fi
+
+          git commit -m "Update tracked Canadian internship listings"
+          git push
