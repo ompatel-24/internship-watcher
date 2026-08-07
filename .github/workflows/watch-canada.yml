@@ -1,4 +1,4 @@
-name: Watch Summer 2027 Internships
+name: Watch Canadian Tech Internships 2026
 
 on:
   schedule:
@@ -9,7 +9,7 @@ permissions:
   contents: write
 
 concurrency:
-  group: internship-readme-watcher
+  group: internship-readme-watcher-canada
   cancel-in-progress: false
 
 jobs:
@@ -23,71 +23,63 @@ jobs:
       - name: Download latest internship README
         run: |
           curl --fail --silent --show-error \
-            "https://raw.githubusercontent.com/SimplifyJobs/Summer2027-Internships/dev/README.md" \
-            -o latest-readme.md
-
-      - name: Install parser
-        run: pip install beautifulsoup4
+            "https://raw.githubusercontent.com/negarprh/Canadian-Tech-Internships-2026/main/README.md" \
+            -o latest-canada-readme.md
 
       - name: Find added jobs
         id: jobs
         run: |
           python <<'PY'
           import os
+          import re
           from pathlib import Path
-          from bs4 import BeautifulSoup
 
-          def software_engineering_section(content):
-              # The README groups roles under "## <emoji> <Category> Internship
-              # Roles" headings. We only care about Software Engineering, so
-              # slice out just that section (up to the next "## " heading).
-              lines = content.splitlines()
-              start = None
-
-              for i, line in enumerate(lines):
-                  if line.startswith("## ") and "software engineering" in line.lower():
-                      start = i
-                      break
-
-              if start is None:
-                  return ""
-
-              end = len(lines)
-
-              for j in range(start + 1, len(lines)):
-                  if lines[j].startswith("## "):
-                      end = j
-                      break
-
-              return "\n".join(lines[start:end])
+          URL_RE = re.compile(r"\]\((https?://[^)]+)\)")
 
           def parse_jobs(path):
               if not Path(path).exists():
                   return {}
 
               content = Path(path).read_text(encoding="utf-8")
-              content = software_engineering_section(content)
-              soup = BeautifulSoup(content, "html.parser")
               jobs = {}
+              last_company = ""
 
-              for row in soup.find_all("tr"):
-                  cells = row.find_all("td")
+              for line in content.splitlines():
+                  stripped = line.strip()
+
+                  # Only markdown table body rows.
+                  if not stripped.startswith("|"):
+                      continue
+
+                  cells = [c.strip() for c in stripped.strip("|").split("|")]
 
                   if len(cells) != 5:
                       continue
 
-                  company = cells[0].get_text(" ", strip=True)
-                  role = cells[1].get_text(" ", strip=True)
-                  location = cells[2].get_text(", ", strip=True)
+                  company, role, location, apply_cell, _date = cells
 
-                  links = cells[3].find_all("a", href=True)
-                  apply_url = links[0]["href"] if links else ""
-
-                  if not company or not role or not apply_url:
+                  # Skip the header and separator rows.
+                  if company.lower() == "company" or set(company) <= set("-: "):
                       continue
 
-                  # The application URL uniquely identifies the listing.
-                  key = apply_url
+                  # Rows beginning with the continuation arrow reuse the
+                  # company from the row above.
+                  if company in ("↳", "") or company.strip("↳ ") == "":
+                      company = last_company
+                  else:
+                      last_company = company
+
+                  # Apply cells look like [![Apply](badge-img)](real-url);
+                  # the last URL is the actual application link.
+                  urls = URL_RE.findall(apply_cell)
+                  apply_url = urls[-1] if urls else ""
+
+                  if not company or not role:
+                      continue
+
+                  # Prefer the application URL as the unique key; fall back to
+                  # the company/role/location tuple for closed listings.
+                  key = apply_url or f"{company}|{role}|{location}"
 
                   jobs[key] = {
                       "company": company,
@@ -98,8 +90,8 @@ jobs:
 
               return jobs
 
-          old_jobs = parse_jobs("state/readme.md")
-          new_jobs = parse_jobs("latest-readme.md")
+          old_jobs = parse_jobs("state/canada-readme.md")
+          new_jobs = parse_jobs("latest-canada-readme.md")
 
           added = [
               job
@@ -116,7 +108,7 @@ jobs:
           output = Path(os.environ["GITHUB_OUTPUT"])
 
           with output.open("a") as f:
-              f.write(f"first_run={'true' if not Path('state/readme.md').exists() else 'false'}\n")
+              f.write(f"first_run={'true' if not Path('state/canada-readme.md').exists() else 'false'}\n")
               f.write(f"added_count={len(added)}\n")
               f.write(f"removed_count={len(removed)}\n")
               f.write(f"changed={'true' if added or removed else 'false'}\n")
@@ -128,7 +120,7 @@ jobs:
                   lines.append(
                       f"{job['company']} — {job['role']}\n"
                       f"{job['location']}\n"
-                      f"{job['url']}"
+                      f"{job['url'] or 'See listing'}"
                   )
 
               if len(added) > 10:
@@ -150,10 +142,10 @@ jobs:
           ADDED_COUNT: ${{ steps.jobs.outputs.added_count }}
         run: |
           curl --fail --silent --show-error \
-            -H "Title: $ADDED_COUNT new Summer 2027 job(s)" \
+            -H "Title: $ADDED_COUNT new Canadian tech internship(s)" \
             -H "Priority: high" \
-            -H "Tags: briefcase" \
-            -H "Click: https://github.com/SimplifyJobs/Summer2027-Internships" \
+            -H "Tags: maple_leaf" \
+            -H "Click: https://github.com/negarprh/Canadian-Tech-Internships-2026" \
             --data-binary @notification.txt \
             "https://ntfy.sh/$NTFY_TOPIC"
 
@@ -161,17 +153,17 @@ jobs:
         if: steps.jobs.outputs.changed == 'true' || steps.jobs.outputs.first_run == 'true'
         run: |
           mkdir -p state
-          cp latest-readme.md state/readme.md
+          cp latest-canada-readme.md state/canada-readme.md
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-          git add state/readme.md
+          git add state/canada-readme.md
 
           if git diff --cached --quiet; then
             echo "No state changes."
             exit 0
           fi
 
-          git commit -m "Update tracked internship listings"
+          git commit -m "Update tracked Canadian internship listings"
           git push
