@@ -183,7 +183,7 @@ Built to help students in Canada find verified tech internships faster.
 | ↳ | Specialty Chemicals Engineering & Technical Analyst | Calgary, AB | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://careers-canada-secure.icims.com/jobs/1926/job?mobile=true&needsRedirect=false) | Sep 9, 2026 |
 | ↳ | Software Developer Intern | Calgary, AB | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://careers-canada-secure.icims.com/jobs/1934/job?mobile=true&needsRedirect=false) | Sep 9, 2026 |
 | Bank of Montreal | Hardware Asset Management Analyst Co-op Intern | Toronto, ON | Closed🔒 | Sep 9, 2026 |
-| CAE | Junior Data Analyst Intern | Halifax, NS | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://cae.wd3.myworkdayjobs.com/career/job/Halifax/XMLNAME----C-DS-902-Junior-Data-Analytics-Intern_123391) | Sep 9, 2026 |
+| CAE | Junior Data Analyst Intern | Halifax, NS | Closed🔒 | Sep 9, 2026 |
 | Royal Bank of Canada | Capital Markets Winter Analyst, AidenEdge Program | Toronto, ON | Closed🔒 | Sep 9, 2026 |
 | CIBC | Data Scientist Analyst, GTB | Toronto, ON | Closed🔒 | Sep 9, 2026 |
 | Sun Life | API Developer | Toronto, ON | Closed🔒 | Sep 9, 2026 |
@@ -296,7 +296,7 @@ Built to help students in Canada find verified tech internships faster.
 | Remarcable | Full Stack Developer Co-op | Vancouver, BC | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://jobs.ashbyhq.com/remarcable-inc/a4f3aaaa-9469-42e8-a610-450d25eb5da7/) | Sep 2, 2026 |
 | Sun Life | Associate Front-End Developer | Toronto, ON / Waterloo, ON | Closed🔒 | Sep 2, 2026 |
 | RTX | Data Analyst Intern, Global Sales | Longueuil, QC | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://globalhr.wd5.myworkdayjobs.com/rec_rtx_ext_gateway/job/CA-QC-SAINT-HUBERT-H12--7007-Chemin-De-La-Savane--BLDG-H12-TRAINING/Stage---Hiver-2027----Ventes-globales---Internship---Winter-2027----Global-Sales_01869713) | Sep 2, 2026 |
-| CAE | Software Engineering Intern, AI, Automation and Business Intelligence | Montreal, QC | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://cae.wd3.myworkdayjobs.com/career/job/Montreal-St-Laurent/C-FIN-275-Software-Engineering-Intern--AI--Automation-and-Business-Intelligence_123477-1) | Sep 2, 2026 |
+| CAE | Software Engineering Intern, AI, Automation and Business Intelligence | Montreal, QC | Closed🔒 | Sep 2, 2026 |
 | General Motors | Mechatronic Infrastructure Diagnostic Systems Co-op | Markham, ON | Closed🔒 | Sep 2, 2026 |
 | Zurich Insurance | IT Data Governance Intern | Toronto, ON | Closed🔒 | Sep 1, 2026 |
 | ↳ | Data Engineering Intern | Toronto, ON | Closed🔒 | Sep 1, 2026 |
@@ -397,10 +397,10 @@ Built to help students in Canada find verified tech internships faster.
  | McGill University | Teaching Assistant | Montreal, QC | Closed🔒 | Aug 24, 2026 | 
  | Royal Bank of Canada | AI Engineer Co-op | Toronto, ON | Closed🔒 | Aug 24, 2026 | 
  | Mackenzie Investments | Data Science Intern | Toronto, ON | Closed🔒 | Aug 21, 2026 |
-| Ontario Teachers' Pension Plan | Business Insights and Analytics Intern, Member Services | Toronto, ON | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Intern---Member-Services--Business-Insights-and-Analytics--January-2027---8-months-_7179) | Aug 21, 2026 | 
- | ↳ | Capital Markets Intern, Quantitative Strategies and Research | Toronto, ON | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Intern---Capital-Markets--Quantitative-Strategies-and-Research--January-2027---4-months-_7167) | Aug 21, 2026 | 
- | ↳ | Finance Intern, Risk Analytics | Toronto, ON | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Intern--Finance--Risk-Analytics--January-2027--8-months-_7145) | Aug 21, 2026 | 
- | ↳ | Capital Markets Intern, Quantitative Strategies and Research | Toronto, ON | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://otppb.wd3.myworkdayjobs.com/OntarioTeachers_Careers/job/Toronto-Canada/Intern---Capital-Markets--Quantitative-Strategies-and-Research--May-2027---4-months-_7168) | Aug 21, 2026 | 
+| Ontario Teachers' Pension Plan | Business Insights and Analytics Intern, Member Services | Toronto, ON | Closed🔒 | Aug 21, 2026 | 
+ | ↳ | Capital Markets Intern, Quantitative Strategies and Research | Toronto, ON | Closed🔒 | Aug 21, 2026 | 
+ | ↳ | Finance Intern, Risk Analytics | Toronto, ON | Closed🔒 | Aug 21, 2026 | 
+ | ↳ | Capital Markets Intern, Quantitative Strategies and Research | Toronto, ON | Closed🔒 | Aug 21, 2026 | 
 | Goldman Sachs | Summer Analyst, Engineering | Toronto, ON | [![Apply](https://img.shields.io/badge/-Apply-blue?style=for-the-badge)](https://higher.gs.com/roles/171567) | Aug 20, 2026 |
  | Royal Bank of Canada | GRM, Portfolio Risk Data & AI Analyst Intern | Toronto, ON | Closed🔒 | Aug 20, 2026 |
 | Kensington | Data Analyst Intern, Revenue Optimization | Toronto, ON | Closed🔒 | Aug 19, 2026 | 
